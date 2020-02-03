@@ -1,1 +1,1 @@
-ECEF.TPM.matrix	ECEF.SamplesNTraits.txt	New_EC_all_WGCNA	EC_annotations.tsv	
+Ecar_SizeNormed_Integer_TPM.matrix	ECEF_expanded_samplesntraits.txt	New_EC_all_WGCNA	EC_annotations_usefulCols.tsv	
