@@ -8,3 +8,6 @@ Large parts of this tutorial are adapted directly from [Steve Horvath's WGCNA tu
 * Part 3: Examine module/trait correlation
 * Part 4: Incorporate annotations 
 * Part 5: Create visualization of TOM (optional) 
+
+--------
+I have added five R scripts -- WGCNA Modules 1-5 -- as demos of the WGCNA procedures outlined above. Full markdown of the scripts are forthcoming. 
