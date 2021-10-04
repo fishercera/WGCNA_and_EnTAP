@@ -33,11 +33,16 @@ nSamples = nrow(datExpr0)
 # Recalculate MEs with color labels
 MEs0 = moduleEigengenes(datExpr0, moduleColors)$eigengenes
 MEs = orderMEs(MEs0)
+# use = "p" means use = "pairwise.complete.obs"
 moduleTraitCor = cor(MEs, datTraits, use = "p")
 moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples)
 
 library(data.table)
 ### Make a key/value data.table of each trait and the highest correlation module name
+### This is my addition to the pipeline - adding a test for reciprocal highest correlation 
+## for each trait & module 
+## "Traits" here include as much categorical information as we can about each sample
+
 dict <- data.frame(x=colnames(moduleTraitCor), y=1:length(colnames(moduleTraitCor)))
 
 for (i in seq(1,length(colnames(moduleTraitCor)),1)) {
@@ -57,7 +62,7 @@ for (i in seq(1,length(rownames(moduleTraitCor)),1)) {
 dict2 <- data.table(dict2)
 write.table(dict2, paste(basename, "Modules_and_HighestCorTrait.tab", sep="_"), sep="\t")
 ### Written to a file. 
-
+### We'll use those data tables later. First, we want to make the big heatmap.
 # Will display correlations and their p-values
 textMatrix =  paste(signif(moduleTraitCor, 2), sep = "");
 dim(textMatrix) = dim(moduleTraitCor)
@@ -114,43 +119,45 @@ for (i in seq(1,length(colnames(datTraits)),1)) {
 
 
 ####
-
-tissue = as.data.frame(datTraits$Pro)
-names(tissue) = "Pro" 
+### Sandbox space - try out different traits and module combos
+#tissue = as.data.frame(datTraits$Pro)
+#names(tissue) = "Pro" 
 # names (colors) of the modules
-modNames = substring(names(MEs), 3)
+#modNames = substring(names(MEs), 3)
+#print("Now I am starting the cor(datExpr0, MEs, use='p')")
+#This may not be working, check in interactive
+#geneModuleMembership = as.data.frame(cor(datExpr0, MEs, use = "p"))
+#MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples))
 
-geneModuleMembership = as.data.frame(cor(datExpr0, MEs, use = "p"))
-MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples))
+#names(geneModuleMembership) = paste("MM", modNames, sep="")
+#names(MMPvalue) = paste("p.MM", modNames, sep="")
+#This may not be working, check in interactive
+#print("Now I am starting the other one: cor(datExpr0, tissue, use='p')") 
+#geneTraitSignificance = as.data.frame(cor(datExpr0, tissue, use = "p"))
+#GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples))
 
-names(geneModuleMembership) = paste("MM", modNames, sep="")
-names(MMPvalue) = paste("p.MM", modNames, sep="")
+#names(geneTraitSignificance) = paste("GS.", names(tissue), sep="")
+#names(GSPvalue) = paste("p.GS.", names(tissue), sep="")
 
-geneTraitSignificance = as.data.frame(cor(datExpr0, tissue, use = "p"))
-GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples))
-
-names(geneTraitSignificance) = paste("GS.", names(tissue), sep="")
-names(GSPvalue) = paste("p.GS.", names(tissue), sep="")
-
-g <- moduleTraitCor[,which(colnames(moduleTraitCor)=="Pro")]
-module = modNames[which(g==max(g))]
+#g <- moduleTraitCor[,which(colnames(moduleTraitCor)=="Pro")]
+#module = modNames[which(g==max(g))]
 
 
 
 
-column = match(module, modNames)
-moduleGenes = moduleColors==module
-table(moduleGenes)
+#column = match(module, modNames)
+#moduleGenes = moduleColors==module
+#table(moduleGenes)
 
-par(mfrow = c(1,1))
-pdf(paste(basename, module, names(tissue), "Scatterplot.pdf", sep="_"))
-verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
-                   abs(geneTraitSignificance[moduleGenes, 1]),
-                   xlab = paste("Module Membership in", module, "module", sep=" "),
-                   ylab = paste("Gene significance for trait:", names(tissue), sep=" "),
-                   main = paste("Module membership vs. gene significance\n"),
-                   cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = "black")
-dev.off()
+#par(mfrow = c(1,1))
+#pdf(paste(basename, module, names(tissue), "Scatterplot.pdf", sep="_"))
+#verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
+#                   abs(geneTraitSignificance[moduleGenes, 1]),
+#                   xlab = paste("Module Membership in", module, "module", sep=" "),
+#                   ylab = paste("Gene significance for trait:", names(tissue), sep=" "),
+#                   main = paste("Module membership vs. gene significance\n"),
+#                   cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = "black")
+#dev.off()
 
 
 

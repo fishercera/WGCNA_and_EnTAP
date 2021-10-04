@@ -21,7 +21,6 @@ annotations <- Config$V4
 
 print("These are the variables")
 print(paste(infile, traitfile, basename, annotations, sep=" "))
-annotations <- annots
 #=====================================================================================
 #
 #  Code chunk 1
@@ -29,16 +28,6 @@ annotations <- annots
 #=====================================================================================
 
 
-# Display the current working directory
-getwd();
-# If necessary, change the path below to the directory where the data files are stored.
-# "." means current directory. On Windows use a forward slash / instead of the usual \.
-workingDir = ".";
-setwd(workingDir)
-# Load the WGCNA package
-library(WGCNA)
-# The following setting is important, do not omit.
-options(stringsAsFactors = FALSE);
 # Load the expression and trait data saved in the first part
 lnames = load(file = paste(basename, "WGCNA.RData", sep="_"));
 #The variable lnames contains the names of loaded variables.
@@ -54,16 +43,17 @@ datExpr0 <- data.frame(datExpr0)
 #
 #=====================================================================================
 
-
 # Define numbers of genes and samples
 nGenes = ncol(datExpr0);
 nSamples = nrow(datExpr0);
 # Recalculate MEs with color labels
-MEsList = moduleEigengenes(datExpr0, moduleColors)
-MEs = orderMEs(MEs0)
+MEsList = moduleEigengenes(datExpr0, moduleColors)$eigengenes
+## Solved the bug with the above code - needed to be pulling only the $eigengenes part of moduleEigengenes
+MEs = orderMEs(MEsList)
+### Debug here -- it appears to be a problem that can be solved with an as.numeric coercion
+### https://www.programmingr.com/r-error-messages/list-object-cannot-be-coerced-to-type-double/
 moduleTraitCor = cor(MEs, datTraits, use = "p");
 moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples);
-
 
 #=====================================================================================
 #
@@ -98,13 +88,13 @@ dev.off()
 #
 #=====================================================================================
 
-
+# This is also repetition from the last module - doing verboseScatterplots as one-offs
 # Define variable weight containing the weight column of datTrait
-tissue = as.data.frame(datTraits$ProNWings);
-names(tissue) = "ProNWings"
+tissue = as.data.frame(datTraits$Pro);
+names(tissue) = "Pro"
 # names (colors) of the modules
 modNames = substring(names(MEs), 3)
-g <- moduleTraitCor[,which(colnames(moduleTraitCor)=="ProNWings")]
+g <- moduleTraitCor[,which(colnames(moduleTraitCor)=="Pro")]
 
 geneModuleMembership = as.data.frame(cor(datExpr0, MEs, use = "p"));
 MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
@@ -150,8 +140,9 @@ dev.off()
 #  Code chunk 7 - get all the gene ids for a particular module and write them to a file
 #
 #=====================================================================================
-
-module="lavenderblush3"
+# This can be modified for any desired module
+## This may be something you would want to define at the top
+module="plum2"
 MemberGenes <- names(datExpr0)[moduleColors==module]
 write.csv(MemberGenes, paste(basename, module, "memberGenes.csv", sep="_"))
 
@@ -161,7 +152,8 @@ write.csv(MemberGenes, paste(basename, module, "memberGenes.csv", sep="_"))
 #  Code chunk 8 - attach annotations to ids
 #
 #=====================================================================================
-
+# These annotations come from Entap. 
+# This is bespoke code. 
 #### Need to get Annotations for my OrthoGroups!!
 print("Now please read the annotations file please")
 print(annotations)
@@ -212,7 +204,8 @@ geneInfo0 = data.frame(ECid = probes,
                        moduleColor = moduleColors,
                        geneTraitSignificance,
                        GSPvalue)
-# Order modules by their significance for weight
+# Order modules by their significance for our given trait of interest
+# We had set that trait earlier as "tissue"
 modOrder = order(-abs(cor(MEs, tissue, use = "p")));
 # Add module membership information in the chosen order
 for (mod in 1:ncol(geneModuleMembership))
@@ -224,7 +217,7 @@ for (mod in 1:ncol(geneModuleMembership))
                        paste("p.MM.", modNames[modOrder[mod]], sep=""))
 }
 # Order the genes in the geneInfo variable first by module color, then by geneTraitSignificance
-geneOrder = order(geneInfo0$moduleColor, -abs(geneInfo0$GS.ProNWings));
+geneOrder = order(geneInfo0$moduleColor, -abs(geneInfo0$GS.Pro));
 geneInfo = geneInfo0[geneOrder, ]
 
 
@@ -235,17 +228,20 @@ geneInfo = geneInfo0[geneOrder, ]
 #=====================================================================================
 
 save(geneInfo, moduleTraitCor, moduleTraitPvalue, MEsList, file=paste(basename, "geneInfo.RData", sep="_"))
-write.csv(geneInfo, file = paste(basename, "geneInfo_relevanceForProNWings.csv", sep="_"))
+write.csv(geneInfo, file = paste(basename, "geneInfo_relevanceForPro.csv", sep="_"))
 
-#save(geneInfo0, geneModuleMembership, geneTraitSignificance, file="Hemiptera_ProNWings_GeneInfo_WingsTrait.RData")
+#save(geneInfo0, geneModuleMembership, geneTraitSignificance, file="Hemiptera_Pro_GeneInfo_WingsTrait.RData")
 
 library(dplyr)
 
-module <- "lavenderblush3"
+module <- "plum2"
 
 moduleGeneInfo <- filter(geneInfo, moduleColor==module)
 write.table(moduleGeneInfo, file=paste(basename, module, names(tissue), "geneInfo.tab", sep="_"), sep="\t")
 
+## This is in development - 
+## select hub genes for a given module
+## Figure out what we wanted to do with this? 
 moduleInfo <- moduleGeneInfo %>% arrange(MM.darkmagenta) %>%
   select(HVid, geneName, Descrip1, Descrip2, MM.darkmagenta, GS.Wings)
 hubGenes <- moduleInfo %>% top_n(20, MM.darkmagenta)

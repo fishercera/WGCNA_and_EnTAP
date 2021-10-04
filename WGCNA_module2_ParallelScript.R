@@ -10,12 +10,12 @@ setwd(".")
 library(WGCNA)
 # The following setting is important, do not omit.
 options(stringsAsFactors = FALSE)
-allowWGCNAThreads(nThreads = 2)                                                          # Edit this to add functionality for multi-threading
+allowWGCNAThreads(nThreads = 16)                                                          # Edit this to add functionality for multi-threading
 Config <- read.delim("WGCNA_Config.txt", header=FALSE, sep="\t")                         # Read config file and set variables
-infile <- Config$V1[2]                                                                     
-traitfile <- Config$V2[2]
-basename <- Config$V3[2]
-annots <- Config$V4[2]
+infile <- Config$V1                                                                     
+traitfile <- Config$V2
+basename <- Config$V3
+annots <- Config$V4
 
                                                                                           #Load the data from the first part
 lnames = load(file = paste(basename, "WGCNA.RData", sep="_"))
@@ -62,7 +62,7 @@ sft
 #                        verbose = 3)
 
 #                                               This is the really computationally intensive stuff. For best results, run this on a beefy machine (>12 cores)
-TOM <- adjacency(datExpr0, power=6)                                                       # Compute adjacency
+adj <- adjacency(datExpr0, power=6)                                                       # Compute adjacency
 TOM <- TOMsimilarity(adj)                                                                 # Compute similarity matrix
 dissTOM <- 1-TOM                                                                          # derive dissimilarity matrix (AKA a distance matrix)
 #rm(TOM)                                                                                  # TOM and dissTOM are huge, and the same size. To free up RAM, delete TOM. 
@@ -72,7 +72,7 @@ png(paste(basename, "TOM_geneTree.png", sep="_"))
 plot(geneTree, xlab="", sub="", main = "Gene clustering on TOM-based dissimilarity",
      labels = FALSE, hang = 0.04);
 dev.off()
-
+## Set this as a variable up top so we can play around with it
 minModuleSize <- 15                                                                       # Set a minimum module size. 
                                                                                           # Now we want to cut the tree dynamically to generate modules of similar genes
 dynamicMods <- cutreeDynamic(dendro=geneTree, distM = dissTOM, deepSplit = 2, pamRespectsDendro = FALSE, 
@@ -88,12 +88,12 @@ save(dynamicMods, dynamicColors, TOM, geneTree, file=paste(basename, "unmerged_a
 ##
 sizeGrWindow(8,6)
 png(paste(basename, "ModuleColors_and_GeneTree.png", sep="_"))                            # Print out the gene-tree with the modules each gene belongs to. 
-plotDendroAndColors(geneTree, moduleColors, "Dynamic Tree Cut",
+plotDendroAndColors(geneTree, dynamicColors, "Dynamic Tree Cut",
                     dendroLabels = FALSE, hang = 0.03,
                     addGuide = TRUE, guideHang = 0.05,
                     main = "Gene dendrogram and module colors")
 dev.off()
-
+### Step XX: Make Module eigengenes
 MEList = moduleEigengenes(datExpr0, colors = dynamicColors)                               # Compute module eigengenes -- MEs are generalizations 
 MEs = MEList$eigengenes                                                                   #   of the expression profile of all the genes in a module.
 MEDiss = 1-cor(MEs);                                                                      # Let's make a distance matrix of the MEs' correlation with each other
@@ -101,6 +101,7 @@ METree = hclust(as.dist(MEDiss), method = "average");                           
 png(paste(basename, "ME_tree", "WithCutHeight.png", sep="_"))
 plot(METree, main = "Clustering of module eigengenes",
      xlab = "", sub = "")
+## Set this as a variable up top so we can play around with it 
 MEDissThres = 0.25                                                                        # We're going to merge genes using a dissimilarity threshold of 0.25 (tree heigh)
 abline(h=MEDissThres, col = "red")                                                        # This cut-line shows which modules are going to get merged. 
 dev.off()

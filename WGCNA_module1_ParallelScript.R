@@ -1,6 +1,10 @@
-### 2018 C R Fisher
+### 2018-2021 C R Fisher
 ### First module of WGCNA process
 ## This part does not need parallelization. 
+
+## R session info:
+# R/3.6.0
+
 
 getwd()
 # If necessary, change the path below to the directory where the data files are stored. 
@@ -25,15 +29,18 @@ annots <- Config$V4
 Data = read.delim(infile, sep="\t", header=TRUE)
 ##take a quick look at the data set:
 dim(Data)
-
+colnames(Data)[1] <- "ECid"
 colnames(Data)
 rownames(Data)
 #Step2 rearrange and manipulate the data -- only want columns with counts
 datExpr0 = as.data.frame(t(Data[,-c(1:3)]))
-storage.mode(datExpr0[77,]) <- "integer"
+###### Note -- this is throwing away the first two columns of data, which are 2015's ECA_Abd and ECA_Ovi. 
+###### Do we want to do that? 
+#storage.mode(datExpr0[77,]) <- "integer"
+# What is this line doing? Why only row 77?
 
 colnames(datExpr0) = Data$ECid
-
+## Make sure that we keep our gene names!
 
 ####Step 3: Run builtin data conformity check. 
 
@@ -73,7 +80,7 @@ rownames(datExpr0)
 
 
 getwd()
-traitfile <- "ECEF-withpronwings-expanded_samplesntraits.txt"
+#traitfile <- "ECEF-withpronwings-expanded_samplesntraits.txt"
 traitData = read.delim(traitfile, sep="\t", header=TRUE)
 dim(traitData)
 colnames(traitData)
