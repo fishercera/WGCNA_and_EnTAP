@@ -1,6 +1,7 @@
 ### 2018 C R Fisher
 ### Fifth module of WGCNA process
 ## This part does need parallelization 
+# Main purpose of this module - visualize Topological Overlap Map for a selection of genes
 library(WGCNA)
 #setwd("D:/Cera Fisher/Google Drive/Treehoppers/ResearchFiles/SRAProject/Hemiptera/Hemiptera2/")
 Config <- read.table("WGCNA_Config.txt", header=FALSE, sep="\t")
@@ -37,7 +38,9 @@ nSamples = nrow(datExpr0)
 
 # Calculate topological overlap anew: this could be done more efficiently by saving the TOM
 # calculated during module detection, but let us do it again here.
+### If you need to recalculate TOM, uncomment the next line and comment out the subsequent. 
 #dissTOM = 1-TOMsimilarityFromExpr(datExpr0, power = 6);
+### If you saved TOM, you can do this: 
 dissTOM <- as.matrix(1-TOM)
 
 
@@ -52,6 +55,7 @@ selectColors = moduleColors[select];
 # Open a graphical window
 
 # Transform dissTOM with a power to make moderately strong connections more visible in the heatmap
+# This power is something you might want to set as a variable
 plotDiss = selectTOM^12
 diag(plotDiss) = NA
 
@@ -68,12 +72,14 @@ dev.off()
 # TOMplot(plotTOM, geneTree, moduleColors, main = "Network heatmap plot, all genes")
 # dev.off()
 
+##########
+
 # Recalculate module eigengenes
 MEs = moduleEigengenes(datExpr0, moduleColors)$eigengenes
 # Isolate weight from the clinical traits
 trait = as.data.frame(datTraits$Wings);
 
-
+# To be investigated - what was this about?
   
 pdf(paste(basename, "allTraits_allMods", "dendro.pdf", sep="_"), width=10, height=10)
 METall <- orderMEs(cbind(MEs,datTraits))
